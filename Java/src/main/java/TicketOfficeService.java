@@ -60,24 +60,21 @@ public class TicketOfficeService {
     }
 
     private Map.Entry<String, List<Topologie.TopologieSeat>> getAvailableCoaches(ReservationRequestDto request, Map<String, List<Topologie.TopologieSeat>> seatsByCoaches) {
-        Map.Entry<String, List<Topologie.TopologieSeat>> availableSeatsByCoaches = null;
-        for (Map.Entry<String, List<Topologie.TopologieSeat>> coach : seatsByCoaches.entrySet()) {
-            long availableSeats = 0L;
-            for (Topologie.TopologieSeat seat : coach.getValue()) {
-                if (isSeatAvailable(seat)) {
-                    availableSeats++;
-                }
-            }
-            if (isPossibleToBookCoach(request, availableSeats)) {
-                availableSeatsByCoaches = coach;
-                break;
-            }
-        }
-        return availableSeatsByCoaches;
+
+        return seatsByCoaches.entrySet().stream()
+                .filter(coach -> isPossibleToBookCoach(request, coach))
+                .findFirst()
+                .orElse(null);
     }
 
-    private boolean isPossibleToBookCoach(ReservationRequestDto request, long availableSeats) {
-        return availableSeats >= request.seatCount;
+    private long countAvailableSeats(Map.Entry<String, List<Topologie.TopologieSeat>> coach) {
+        return coach.getValue().stream()
+                .filter(this::isSeatAvailable)
+                .count();
+    }
+
+    private boolean isPossibleToBookCoach(ReservationRequestDto request, Map.Entry<String, List<Topologie.TopologieSeat>> coach) {
+        return countAvailableSeats(coach) >= request.seatCount;
     }
 
     private boolean isSeatAvailable(Topologie.TopologieSeat seat) {
