@@ -14,37 +14,35 @@ public class TicketOfficeService {
     }
 
     public String makeReservation(ReservationRequestDto request) {
-        String data = trainDataClient.getTopology(request.trainId);
+        String trainTopology = trainDataClient.getTopology(request.trainId);
 
-        Map<String, List<Topologie.TopologieSeat>> map = new HashMap<>();
-        for (Topologie.TopologieSeat x : new Gson().fromJson(data, Topologie.class).seats.values()) {
-            map.computeIfAbsent(x.coach, k -> new ArrayList<>()).add(x);
+        Map<String, List<Topologie.TopologieSeat>> seatsByCoaches = new HashMap<>();
+        for (Topologie.TopologieSeat seat : new Gson().fromJson(trainTopology, Topologie.class).seats.values()) {
+            seatsByCoaches.computeIfAbsent(seat.coach, k -> new ArrayList<>()).add(seat);
         }
-        Map.Entry<String, List<Topologie.TopologieSeat>> found = null;
-        for (Map.Entry<String, List<Topologie.TopologieSeat>> x : map.entrySet()) {
-            long count = 0L;
-            for (Topologie.TopologieSeat y : x.getValue()) {
-                if ("".equals(y.booking_reference)) {
-                    count++;
+        Map.Entry<String, List<Topologie.TopologieSeat>> availableSeatsByCoaches = null;
+        for (Map.Entry<String, List<Topologie.TopologieSeat>> coach : seatsByCoaches.entrySet()) {
+            long availableSeats = 0L;
+            for (Topologie.TopologieSeat seat : coach.getValue()) {
+                if ("".equals(seat.booking_reference)) {
+                    availableSeats++;
                 }
             }
-            if (count >= request.seatCount) {
-                found = x;
+            if (availableSeats >= request.seatCount) {
+                availableSeatsByCoaches = coach;
                 break;
             }
         }
         List<Seat> seats = new ArrayList<>();
-        if(found != null) {
-            List<Seat> list = new ArrayList<>();
+        if(availableSeatsByCoaches != null) {
             long limit = request.seatCount;
-            for (Topologie.TopologieSeat y : found.getValue()) {
-                if ("".equals(y.booking_reference)) {
+            for (Topologie.TopologieSeat seat1 : availableSeatsByCoaches.getValue()) {
+                if ("".equals(seat1.booking_reference)) {
                     if (limit-- == 0) break;
-                    Seat seat = new Seat(y.coach, y.seat_number);
-                    list.add(seat);
+                    Seat seat = new Seat(seat1.coach, seat1.seat_number);
+                    seats.add(seat);
                 }
             }
-            seats = list;
         }
 
         if (!seats.isEmpty()) {
