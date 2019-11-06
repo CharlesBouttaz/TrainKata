@@ -25,8 +25,8 @@ public class TicketOfficeService {
 
         var bookedSeats = getAvailableSeats(request, availableSeatsByCoaches);
 
-        if (!bookedSeats.isEmpty()) {
-            ReservationResponseDto reservation = new ReservationResponseDto(request.trainId, bookedSeats, bookingReferenceClient.generateBookingReference());
+        if (bookedSeats.isPresent()) {
+            ReservationResponseDto reservation = new ReservationResponseDto(request.trainId, bookedSeats.get(), bookingReferenceClient.generateBookingReference());
             this.bookingReferenceClient.bookTrain(reservation.trainId, reservation.bookingId, reservation.seats);
             return booking(reservation);
         } else {
@@ -46,25 +46,23 @@ public class TicketOfficeService {
         return "{\"train_id\": \"" + request.trainId + "\", \"booking_reference\": \"\", \"seats\": []}";
     }
 
-    private List<Seat> getAvailableSeats(ReservationRequestDto request, Map.Entry<String, List<Topologie.TopologieSeat>> availableSeatsByCoaches) {
-        List<Seat> seats = new ArrayList<>();
-        if (availableSeatsByCoaches == null) {
-            return seats;
-        }
+    private Optional<List<Seat>> getAvailableSeats(ReservationRequestDto request, Optional<Map.Entry<String, List<Topologie.TopologieSeat>>> availableSeatsByCoaches) {
+        return availableSeatsByCoaches
+                .map(
+                        seatsByCoaches -> seatsByCoaches.getValue().stream()
+                                .filter(this::isSeatAvailable)
+                                .limit(request.seatCount)
+                                .map(topologieSeat -> new Seat(topologieSeat.coach, topologieSeat.seat_number))
+                                .collect(Collectors.toList())
+                );
 
-        return availableSeatsByCoaches.getValue().stream()
-                .filter(this::isSeatAvailable)
-                .limit(request.seatCount)
-                .map(topologieSeat -> new Seat(topologieSeat.coach, topologieSeat.seat_number))
-                .collect(Collectors.toList());
     }
 
-    private Map.Entry<String, List<Topologie.TopologieSeat>> getAvailableCoaches(ReservationRequestDto request, Map<String, List<Topologie.TopologieSeat>> seatsByCoaches) {
+    private Optional<Map.Entry<String, List<Topologie.TopologieSeat>>> getAvailableCoaches(ReservationRequestDto request, Map<String, List<Topologie.TopologieSeat>> seatsByCoaches) {
 
         return seatsByCoaches.entrySet().stream()
                 .filter(coach -> isPossibleToBookCoach(request, coach))
-                .findFirst()
-                .orElse(null);
+                .findFirst();
     }
 
     private long countAvailableSeats(Map.Entry<String, List<Topologie.TopologieSeat>> coach) {
