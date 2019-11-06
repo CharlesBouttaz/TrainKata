@@ -20,41 +20,69 @@ public class TicketOfficeService {
         for (Topologie.TopologieSeat seat : new Gson().fromJson(trainTopology, Topologie.class).seats.values()) {
             seatsByCoaches.computeIfAbsent(seat.coach, k -> new ArrayList<>()).add(seat);
         }
-        Map.Entry<String, List<Topologie.TopologieSeat>> availableSeatsByCoaches = null;
-        for (Map.Entry<String, List<Topologie.TopologieSeat>> coach : seatsByCoaches.entrySet()) {
-            long availableSeats = 0L;
-            for (Topologie.TopologieSeat seat : coach.getValue()) {
-                if ("".equals(seat.booking_reference)) {
-                    availableSeats++;
-                }
-            }
-            if (availableSeats >= request.seatCount) {
-                availableSeatsByCoaches = coach;
-                break;
-            }
+
+        var availableSeatsByCoaches = getAvailableCoaches(request, seatsByCoaches);
+
+        var bookedSeats = getAvailableSeats(request, availableSeatsByCoaches);
+
+        if (!bookedSeats.isEmpty()) {
+            ReservationResponseDto reservation = new ReservationResponseDto(request.trainId, bookedSeats, bookingReferenceClient.generateBookingReference());
+            this.bookingReferenceClient.bookTrain(reservation.trainId, reservation.bookingId, reservation.seats);
+            return booking(reservation);
+        } else {
+            return noBooking(request);
         }
+    }
+
+    private String booking(ReservationResponseDto reservation) {
+        return "{" +
+                "\"train_id\": \"" + reservation.trainId + "\", " +
+                "\"booking_reference\": \"" + reservation.bookingId + "\", " +
+                "\"seats\": [" + reservation.seats.stream().map(s -> "\"" + s.seatNumber + s.coach + "\"").collect(Collectors.joining(", ")) + "]" +
+                "}";
+    }
+
+    private String noBooking(ReservationRequestDto request) {
+        return "{\"train_id\": \"" + request.trainId + "\", \"booking_reference\": \"\", \"seats\": []}";
+    }
+
+    private List<Seat> getAvailableSeats(ReservationRequestDto request, Map.Entry<String, List<Topologie.TopologieSeat>> availableSeatsByCoaches) {
         List<Seat> seats = new ArrayList<>();
         if(availableSeatsByCoaches != null) {
             long limit = request.seatCount;
             for (Topologie.TopologieSeat seat1 : availableSeatsByCoaches.getValue()) {
-                if ("".equals(seat1.booking_reference)) {
+                if (isSeatAvailable(seat1)) {
                     if (limit-- == 0) break;
                     Seat seat = new Seat(seat1.coach, seat1.seat_number);
                     seats.add(seat);
                 }
             }
         }
+        return seats;
+    }
 
-        if (!seats.isEmpty()) {
-            ReservationResponseDto reservation = new ReservationResponseDto(request.trainId, seats, bookingReferenceClient.generateBookingReference());
-            this.bookingReferenceClient.bookTrain(reservation.trainId, reservation.bookingId, reservation.seats);
-            return "{" +
-                    "\"train_id\": \"" + reservation.trainId + "\", " +
-                    "\"booking_reference\": \"" + reservation.bookingId + "\", " +
-                    "\"seats\": [" + reservation.seats.stream().map(s -> "\"" + s.seatNumber + s.coach + "\"").collect(Collectors.joining(", ")) + "]" +
-                    "}";
-        } else {
-            return "{\"train_id\": \"" + request.trainId + "\", \"booking_reference\": \"\", \"seats\": []}";
+    private Map.Entry<String, List<Topologie.TopologieSeat>> getAvailableCoaches(ReservationRequestDto request, Map<String, List<Topologie.TopologieSeat>> seatsByCoaches) {
+        Map.Entry<String, List<Topologie.TopologieSeat>> availableSeatsByCoaches = null;
+        for (Map.Entry<String, List<Topologie.TopologieSeat>> coach : seatsByCoaches.entrySet()) {
+            long availableSeats = 0L;
+            for (Topologie.TopologieSeat seat : coach.getValue()) {
+                if (isSeatAvailable(seat)) {
+                    availableSeats++;
+                }
+            }
+            if (isPossibleToBookCoach(request, availableSeats)) {
+                availableSeatsByCoaches = coach;
+                break;
+            }
         }
+        return availableSeatsByCoaches;
+    }
+
+    private boolean isPossibleToBookCoach(ReservationRequestDto request, long availableSeats) {
+        return availableSeats >= request.seatCount;
+    }
+
+    private boolean isSeatAvailable(Topologie.TopologieSeat seat) {
+        return "".equals(seat.booking_reference);
     }
 }
