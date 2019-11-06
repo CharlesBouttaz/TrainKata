@@ -48,17 +48,15 @@ public class TicketOfficeService {
 
     private List<Seat> getAvailableSeats(ReservationRequestDto request, Map.Entry<String, List<Topologie.TopologieSeat>> availableSeatsByCoaches) {
         List<Seat> seats = new ArrayList<>();
-        if(availableSeatsByCoaches != null) {
-            long limit = request.seatCount;
-            for (Topologie.TopologieSeat seat1 : availableSeatsByCoaches.getValue()) {
-                if (isSeatAvailable(seat1)) {
-                    if (limit-- == 0) break;
-                    Seat seat = new Seat(seat1.coach, seat1.seat_number);
-                    seats.add(seat);
-                }
-            }
+        if (availableSeatsByCoaches == null) {
+            return seats;
         }
-        return seats;
+
+        return availableSeatsByCoaches.getValue().stream()
+                .filter(this::isSeatAvailable)
+                .limit(request.seatCount)
+                .map(topologieSeat -> new Seat(topologieSeat.coach, topologieSeat.seat_number))
+                .collect(Collectors.toList());
     }
 
     private Map.Entry<String, List<Topologie.TopologieSeat>> getAvailableCoaches(ReservationRequestDto request, Map<String, List<Topologie.TopologieSeat>> seatsByCoaches) {
