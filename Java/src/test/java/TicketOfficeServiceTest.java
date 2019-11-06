@@ -1,13 +1,9 @@
-import org.hamcrest.CoreMatchers;
+import infra.BookingReferenceClient;
+import infra.SeatDto;
+import infra.TrainDataClient;
 import org.junit.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
 
 public class TicketOfficeServiceTest {
     private static final String TrainId = "9043-2018-05-24";
@@ -26,9 +22,9 @@ public class TicketOfficeServiceTest {
         Assert.assertEquals(TrainId, bookingReferenceClient.trainIdBooked);
         Assert.assertEquals(BookingReference, bookingReferenceClient.referenceBooked);
         Assert.assertEquals(3, bookingReferenceClient.seatsBooked.size());
-        Assert.assertEquals(new Seat("A", 1).toString(), bookingReferenceClient.seatsBooked.get(0).toString());
-        Assert.assertEquals(new Seat("A", 2).toString(), bookingReferenceClient.seatsBooked.get(1).toString());
-        Assert.assertEquals(new Seat("A", 3).toString(), bookingReferenceClient.seatsBooked.get(2).toString());
+        Assert.assertEquals(new SeatDto("A", 1).toString(), bookingReferenceClient.seatsBooked.get(0).toString());
+        Assert.assertEquals(new SeatDto("A", 2).toString(), bookingReferenceClient.seatsBooked.get(1).toString());
+        Assert.assertEquals(new SeatDto("A", 3).toString(), bookingReferenceClient.seatsBooked.get(2).toString());
     }
 
     @Test
@@ -106,7 +102,7 @@ public class TicketOfficeServiceTest {
         private String bookingReference;
         public String trainIdBooked;
         public String referenceBooked;
-        public List<Seat> seatsBooked;
+        public List<SeatDto> seatsBooked;
         public Boolean booked = false;
 
         public BookingReferenceClientStub(String bookingReference) {
@@ -119,7 +115,7 @@ public class TicketOfficeServiceTest {
         }
 
         @Override
-        public void bookTrain(String trainId, String bookingReference, List<Seat> seats){
+        public void bookTrain(String trainId, String bookingReference, List<SeatDto> seats){
             this.trainIdBooked = trainId;
             this.referenceBooked = bookingReference;
             this.seatsBooked = seats;

@@ -1,11 +1,13 @@
+import infra.SeatDto;
+
 import java.util.List;
 
 public class ReservationResponseDto {
 	public final String trainId;
     public final String bookingId;
-    public final List<Seat> seats;
+    public final List<SeatDto> seats;
 
-    public ReservationResponseDto(String trainId, List<Seat> seats, String bookingId) {
+    public ReservationResponseDto(String trainId, List<SeatDto> seats, String bookingId) {
 		this.trainId = trainId;
         this.bookingId = bookingId;
         this.seats = seats;
