@@ -6,6 +6,7 @@ import infra.out.Topologie;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 // TODO CBO: 29/05/2020 no package
@@ -27,7 +28,8 @@ public class TicketOfficeService {
     public String makeReservation(ReservationRequestDto request) {
         Train train = allTrains.findWith(request.trainId);
 
-        List<Seat> seatsToBook = train.findSeatsForBooking(request.seatCount);
+        Optional<List<Seat>> seatsToBook = train.findSeatsForBooking(request.seatCount);
+
 
         List<SeatInfra> seats = computeAvailableSeats(trainData, request.seatCount);
 

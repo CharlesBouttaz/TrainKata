@@ -1,12 +1,7 @@
 package domain.model;
 
-import com.google.gson.Gson;
-import infra.out.Topologie;
-
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 public class Train {
     private String trainId;
@@ -21,9 +16,10 @@ public class Train {
         return trainId;
     }
 
-    public List<Seat> findSeatsForBooking(int seatCount){
+    public Optional<List<Seat>> findSeatsForBooking(int seatCount){
 
-        coaches.stream().filter(coach -> coach.canHandle(seatCount)).findFirst();
+        return coaches.stream().map(coach -> coach.getSeatsForBooking(seatCount))
+                .findFirst().get();
 
         /*return itemWithOwner.seats.values().stream()
                 .collect(Collectors.groupingBy(topologieSeat -> topologieSeat.coach)).entrySet().stream()
