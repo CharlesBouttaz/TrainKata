@@ -1,4 +1,5 @@
 import com.google.gson.Gson;
+import infra.out.Topologie;
 import infra.out.TrainDataClient;
 
 import java.util.ArrayList;

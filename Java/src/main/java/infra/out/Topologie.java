@@ -1,3 +1,5 @@
+package infra.out;
+
 import java.util.Map;
 
 public class Topologie {
