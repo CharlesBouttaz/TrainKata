@@ -1,3 +1,4 @@
+import infra.out.TrainAdapter;
 import infra.out.TrainDataClient;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -78,7 +79,7 @@ public class TicketOfficeServiceTest {
 
     private static TicketOfficeService buildTicketOfficeService(String topologies)
     {
-        return new TicketOfficeService(new TrainDataClientStub(topologies), new BookingReferenceClientStub(BookingReference));
+        return new TicketOfficeService(new TrainAdapter(new TrainDataClientStub(topologies)), new BookingReferenceClientStub(BookingReference));
     }
 
     private static class BookingReferenceClientStub implements BookingReferenceClient {
@@ -94,7 +95,7 @@ public class TicketOfficeServiceTest {
         }
 
         @Override
-        public void bookTrain(String trainId, String bookingReference, List<Seat> seats){
+        public void bookTrain(String trainId, String bookingReference, List<SeatInfra> seats){
         }
     }
 

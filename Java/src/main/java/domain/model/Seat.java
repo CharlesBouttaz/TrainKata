@@ -10,4 +10,8 @@ public class Seat {
         this.seatId = seatId;
         this.available = available;
     }
+
+    boolean isAvailable() {
+        return available;
+    }
 }

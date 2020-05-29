@@ -1,6 +1,8 @@
 import com.google.gson.Gson;
+import domain.AllTrains;
+import domain.model.Seat;
+import domain.model.Train;
 import infra.out.Topologie;
-import infra.out.TrainDataClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,18 +16,20 @@ import java.util.stream.Collectors;
 
 public class TicketOfficeService {
 
-    private TrainDataClient trainDataClient;
     private BookingReferenceClient bookingReferenceClient;
+    private AllTrains allTrains;
 
-    public TicketOfficeService(TrainDataClient trainDataClient, BookingReferenceClient bookingReferenceClient) {
-        this.trainDataClient = trainDataClient;
+    public TicketOfficeService(AllTrains allTrains, BookingReferenceClient bookingReferenceClient) {
         this.bookingReferenceClient = bookingReferenceClient;
+        this.allTrains = allTrains;
     }
 
     public String makeReservation(ReservationRequestDto request) {
-        String trainData = trainDataClient.getTopology(request.trainId);
+        Train train = allTrains.findWith(request.trainId);
 
-        List<Seat> seats = computeAvailableSeats(trainData, request.seatCount);
+        List<Seat> seatsToBook = train.findSeatsForBooking(request.seatCount);
+
+        List<SeatInfra> seats = computeAvailableSeats(trainData, request.seatCount);
 
         if(seats.isEmpty()) return "{\"train_id\": \""+request.trainId+"\", \"booking_reference\": \"\", \"seats\": []}";
 
@@ -37,7 +41,7 @@ public class TicketOfficeService {
                 "}";
     }
 
-    private List<Seat> computeAvailableSeats(String trainData, int seatCount) {
+    private List<SeatInfra> computeAvailableSeats(String trainData, int seatCount) {
         Topologie itemWithOwner = new Gson().fromJson(trainData, Topologie.class);
 
         return itemWithOwner.seats.values().stream()
@@ -46,7 +50,7 @@ public class TicketOfficeService {
                         .filter(s -> "".equals(s.booking_reference))
                         .count() >= seatCount)
                 .findFirst()
-                .map(coach -> coach.getValue().stream().filter(s -> "".equals(s.booking_reference)).limit(seatCount).map(s -> new Seat(s.coach, s.seat_number)).collect(Collectors.toList()))
-                .orElse(new ArrayList<Seat>());
+                .map(coach -> coach.getValue().stream().filter(s -> "".equals(s.booking_reference)).limit(seatCount).map(s -> new SeatInfra(s.coach, s.seat_number)).collect(Collectors.toList()))
+                .orElse(new ArrayList<SeatInfra>());
     }
 }

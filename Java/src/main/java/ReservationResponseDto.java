@@ -3,9 +3,9 @@ import java.util.List;
 public class ReservationResponseDto {
 	public final String trainId;
     public final String bookingId;
-    public final List<Seat> seats;
+    public final List<SeatInfra> seats;
 
-    public ReservationResponseDto(String trainId, List<Seat> seats, String bookingId) {
+    public ReservationResponseDto(String trainId, List<SeatInfra> seats, String bookingId) {
 		this.trainId = trainId;
         this.bookingId = bookingId;
         this.seats = seats;
