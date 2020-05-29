@@ -20,14 +20,5 @@ public class Train {
 
         return coaches.stream().map(coach -> coach.getSeatsForBooking(seatCount))
                 .findFirst().get();
-
-        /*return itemWithOwner.seats.values().stream()
-                .collect(Collectors.groupingBy(topologieSeat -> topologieSeat.coach)).entrySet().stream()
-                .filter(coach -> coach.getValue().stream()
-                        .filter(s -> "".equals(s.booking_reference))
-                        .count() >= seatCount)
-                .findFirst()
-                .map(coach -> coach.getValue().stream().filter(s -> "".equals(s.booking_reference)).limit(seatCount).map(s -> new SeatInfra(s.coach, s.seat_number)).collect(Collectors.toList()))
-                .orElse(new ArrayList<SeatInfra>());*/
     }
 }

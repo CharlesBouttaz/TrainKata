@@ -2,6 +2,7 @@ import com.google.gson.Gson;
 import domain.AllTrains;
 import domain.model.Seat;
 import domain.model.Train;
+import infra.in.MakeReservation;
 import infra.out.Topologie;
 
 import java.util.ArrayList;
@@ -15,7 +16,7 @@ import java.util.stream.Collectors;
 // TODO CBO: 29/05/2020 primitive obsession
 // TODO CBO: 29/05/2020 tight coupling
 
-public class TicketOfficeService {
+public class TicketOfficeService implements MakeReservation {
 
     private BookingReferenceClient bookingReferenceClient;
     private AllTrains allTrains;
@@ -25,6 +26,7 @@ public class TicketOfficeService {
         this.allTrains = allTrains;
     }
 
+    @Override
     public String makeReservation(ReservationRequestDto request) {
         Train train = allTrains.findWith(request.trainId);
 
