@@ -1,6 +1,7 @@
 import com.google.gson.Gson;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class TicketOfficeService {
@@ -14,48 +15,30 @@ public class TicketOfficeService {
     }
 
     public String makeReservation(ReservationRequestDto request) {
-        String data = trainDataClient.getTopology(request.trainId);
+        String trainData = trainDataClient.getTopology(request.trainId);
 
-        Map<String, List<Topologie.TopologieSeat>> map = new HashMap<>();
-        for (Topologie.TopologieSeat x : new Gson().fromJson(data, Topologie.class).seats.values()) {
-            map.computeIfAbsent(x.coach, k -> new ArrayList<>()).add(x);
-        }
-        Map.Entry<String, List<Topologie.TopologieSeat>> found = null;
-        for (Map.Entry<String, List<Topologie.TopologieSeat>> x : map.entrySet()) {
-            long count = 0L;
-            for (Topologie.TopologieSeat y : x.getValue()) {
-                if ("".equals(y.booking_reference)) {
-                    count++;
-                }
-            }
-            if (count >= request.seatCount) {
-                found = x;
-                break;
-            }
-        }
-        List<Seat> seats = new ArrayList<>();
-        if(found != null) {
-            List<Seat> list = new ArrayList<>();
-            long limit = request.seatCount;
-            for (Topologie.TopologieSeat y : found.getValue()) {
-                if ("".equals(y.booking_reference)) {
-                    if (limit-- == 0) break;
-                    Seat seat = new Seat(y.coach, y.seat_number);
-                    list.add(seat);
-                }
-            }
-            seats = list;
-        }
+        List<Seat> seats = computeSeats(trainData, request.seatCount);
 
-        if (!seats.isEmpty()) {
-            ReservationResponseDto reservation = new ReservationResponseDto(request.trainId, seats, bookingReferenceClient.generateBookingReference());
-            return "{" +
-                    "\"train_id\": \"" + reservation.trainId + "\", " +
-                    "\"booking_reference\": \"" + reservation.bookingId + "\", " +
-                    "\"seats\": [" + reservation.seats.stream().map(s -> "\"" + s.seatNumber + s.coach + "\"").collect(Collectors.joining(", ")) + "]" +
-                    "}";
-        } else {
-            return "{\"train_id\": \"" + request.trainId + "\", \"booking_reference\": \"\", \"seats\": []}";
-        }
+        if(seats.isEmpty()) return "{\"train_id\": \""+request.trainId+"\", \"booking_reference\": \"\", \"seats\": []}";
+
+        ReservationResponseDto reservation = new ReservationResponseDto(request.trainId, seats, bookingReferenceClient.generateBookingReference());
+        return "{" +
+                "\"train_id\": \"" + reservation.trainId + "\", " +
+                "\"booking_reference\": \"" + reservation.bookingId + "\", " +
+                "\"seats\": [" + reservation.seats.stream().map(s -> "\"" + s.seatNumber + s.coach + "\"").collect(Collectors.joining(", ")) + "]" +
+                "}";
+    }
+
+    private List<Seat> computeSeats(String trainData, int seatCount) {
+        Topologie itemWithOwner = new Gson().fromJson(trainData, Topologie.class);
+
+        return itemWithOwner.seats.values().stream()
+                .collect(Collectors.groupingBy(topologieSeat -> topologieSeat.coach)).entrySet().stream()
+                .filter(coach -> coach.getValue().stream()
+                        .filter(s -> "".equals(s.booking_reference))
+                        .count() >= seatCount)
+                .findFirst()
+                .map(coach -> coach.getValue().stream().filter(s -> "".equals(s.booking_reference)).limit(seatCount).map(s -> new Seat(s.coach, s.seat_number)).collect(Collectors.toList()))
+                .orElse(new ArrayList<Seat>());
     }
 }
