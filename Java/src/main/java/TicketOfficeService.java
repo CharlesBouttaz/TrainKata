@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// TODO CBO: 29/05/2020 no package
+// TODO CBO: 29/05/2020 rename according to domain
+// TODO CBO: 29/05/2020 Mixed concerns / SRP
+// TODO CBO: 29/05/2020 primitive obsession
+// TODO CBO: 29/05/2020 tight coupling
+
 public class TicketOfficeService {
 
     private TrainDataClient trainDataClient;
@@ -17,7 +23,7 @@ public class TicketOfficeService {
     public String makeReservation(ReservationRequestDto request) {
         String trainData = trainDataClient.getTopology(request.trainId);
 
-        List<Seat> seats = computeSeats(trainData, request.seatCount);
+        List<Seat> seats = computeAvailableSeats(trainData, request.seatCount);
 
         if(seats.isEmpty()) return "{\"train_id\": \""+request.trainId+"\", \"booking_reference\": \"\", \"seats\": []}";
 
@@ -29,7 +35,7 @@ public class TicketOfficeService {
                 "}";
     }
 
-    private List<Seat> computeSeats(String trainData, int seatCount) {
+    private List<Seat> computeAvailableSeats(String trainData, int seatCount) {
         Topologie itemWithOwner = new Gson().fromJson(trainData, Topologie.class);
 
         return itemWithOwner.seats.values().stream()

@@ -1,10 +1,8 @@
-import org.junit.*;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.*;
 
 public class TicketOfficeServiceTest {
     private static final String TrainId = "9043-2018-05-24";
